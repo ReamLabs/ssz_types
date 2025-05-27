@@ -282,7 +282,15 @@ where
     }
 
     fn from_ssz_bytes(bytes: &[u8]) -> Result<Self, ssz::DecodeError> {
-        let max_len = N::to_usize();
+        // A workaround for decoding a very large list e.g. a validator registry of 2^40 that
+        // does not fit in `usize` of a 32-bit environment (e.g. zkVMs).
+        // It basically assumes `usize::MAX` when `to_usize()` returns 0.
+        //
+        // This is not a permanent solution as it will break lists with >2^32 items.
+        // Even if the list is not saturated, it could still affect merkle tree computation
+        // As the merkleization could assume the list is 2^32 size while it is originally larger.
+        let returned_usize = N::to_usize();
+        let max_len = if returned_usize > 0 { returned_usize } else { usize::MAX };
 
         if bytes.is_empty() {
             Ok(vec![].into())
