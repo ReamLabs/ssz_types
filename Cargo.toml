@@ -12,6 +12,7 @@ categories = ["cryptography::cryptocurrencies"]
 
 [dependencies]
 tree_hash = "0.10.0"
+ethereum_hashing = { git = "https://github.com/ReamLabs/ethereum_hashing.git" }
 ethereum_serde_utils = "0.8.0"
 ethereum_ssz = "0.9.0"
 serde = "1.0.0"

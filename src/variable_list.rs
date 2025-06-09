@@ -1,4 +1,4 @@
-use crate::tree_hash::vec_tree_hash_root;
+use crate::tree_hash::{extend_root, vec_tree_hash_root};
 use crate::Error;
 use serde::Deserialize;
 use serde_derive::Serialize;
@@ -74,6 +74,10 @@ impl<T: std::hash::Hash, N> std::hash::Hash for VariableList<T, N> {
 /// length (N) will contain at least a few thousand small values. i.e. we're targeting an
 /// allocation around the 1MiB to 10MiB mark.
 const MAX_ELEMENTS_TO_PRE_ALLOCATE: usize = 128 * (1 << 10);
+
+const EXTENDED_ROOT_MAGIC_SIZE: usize = 536870912;
+const EXTENDED_ROOT_FROM_HEIGHT: usize = 29; // log2(536870912)
+const EXTENDED_ROOT_TO_HEIGHT: usize = 40;
 
 impl<T, N: Unsigned> VariableList<T, N> {
     /// Returns `Some` if the given `vec` equals the fixed length of `Self`. Otherwise returns
@@ -222,7 +226,11 @@ where
     }
 
     fn tree_hash_root(&self) -> Hash256 {
-        let root = vec_tree_hash_root::<T, N>(&self.vec);
+        let mut root = vec_tree_hash_root::<T, N>(&self.vec);
+
+        if N::to_usize() == EXTENDED_ROOT_MAGIC_SIZE {
+            root = extend_root(root, EXTENDED_ROOT_FROM_HEIGHT, EXTENDED_ROOT_TO_HEIGHT);
+        }
 
         tree_hash::mix_in_length(&root, self.len())
     }
