@@ -3,7 +3,7 @@ use crate::Error;
 use serde::Deserialize;
 use serde_derive::Serialize;
 use std::marker::PhantomData;
-use std::ops::{Deref, DerefMut, Index, IndexMut};
+use std::ops::{Deref, DerefMut, Index, IndexMut, RangeBounds};
 use std::slice::SliceIndex;
 use tree_hash::Hash256;
 use typenum::Unsigned;
@@ -16,7 +16,7 @@ pub use typenum;
 /// `N` values.
 ///
 /// This struct is backed by a Rust `Vec` but constrained such that it must be instantiated with a
-/// fixed number of elements and you may not add or remove elements, only modify.
+/// fixed number of elements.
 ///
 /// The length of this struct is fixed at the type-level using
 /// [typenum](https://crates.io/crates/typenum).
@@ -128,6 +128,12 @@ impl<T, N: Unsigned> VariableList<T, N> {
                 len: Self::max_len(),
             })
         }
+    }
+
+    /// Remove items by a specific range. Note that the start bound is inclusive but the end bound is exclusive.
+    pub fn remove_range<R: RangeBounds<usize>>(&mut self, range: R) -> Result<(), Error> {
+        self.vec.drain(range);
+        Ok(())
     }
 }
 
@@ -406,6 +412,15 @@ mod test {
         let vec = vec![];
         let fixed: VariableList<u64, U4> = VariableList::from(vec);
         assert_eq!(&fixed[..], &[] as &[u64]);
+    }
+
+    #[test]
+    fn remove_range() {
+        let vec = vec![0, 2, 4, 6];
+        let mut fixed: VariableList<u64, U4> = VariableList::from(vec.clone());
+
+        let _ = fixed.remove_range(1..3); // End bound is exclusive so only index 1 and 2 are removed
+        assert_eq!(&fixed[..], &vec![0, 6]);
     }
 
     #[test]
