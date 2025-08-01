@@ -130,6 +130,12 @@ impl<T, N: Unsigned> VariableList<T, N> {
         }
     }
 
+    /// Remove an item from the list
+    /// Caution: This operation has a worst-case performance of O(n).
+    pub fn remove(&mut self, index: usize) -> T {
+        self.vec.remove(index)
+    }
+
     /// Remove items by a specific range. Note that the start bound is inclusive but the end bound is exclusive.
     pub fn remove_range<R: RangeBounds<usize>>(&mut self, range: R) -> Result<(), Error> {
         self.vec.drain(range);
@@ -412,6 +418,15 @@ mod test {
         let vec = vec![];
         let fixed: VariableList<u64, U4> = VariableList::from(vec);
         assert_eq!(&fixed[..], &[] as &[u64]);
+    }
+
+    #[test]
+    fn remove() {
+        let vec = vec![0, 2, 4, 6];
+        let mut fixed: VariableList<u64, U4> = VariableList::from(vec.clone());
+
+        let _ = fixed.remove(2);
+        assert_eq!(&fixed[..], &vec![0, 2, 6]);
     }
 
     #[test]
